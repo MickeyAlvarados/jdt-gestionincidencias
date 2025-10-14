@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('chat_mensajes', function (Blueprint $table) {
             $table->bigInteger('id');
             $table->bigInteger('id_chat');
-            $table->primary(['id', 'id_chat']);
+            $table->primary(['id']);
             $table->bigInteger('emisor')->nullable();
             $table->text('contenido_mensaje')->nullable();
             $table->timestamp('fecha_envio')->nullable();

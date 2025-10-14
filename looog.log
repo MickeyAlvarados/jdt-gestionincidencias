@@ -1,0 +1,11 @@
+ðŸš€ Iniciando Sistema de Chat con IA...
+
+ðŸ“‹ Verificando configuracion...
+âœ… Configuracion verificada
+
+catch : El término 'catch' no se reconoce como nombre de un cmdlet, función, archivo de script o programa ejecutable. Compruebe si escribió correctamente el nombre o, si incluyó una ruta de acceso, compruebe que dicha ruta es correcta e inténtelo de nuevo.
+En D:\DESARROLLO\php\8.2\htdocs\jdt-gestionincidencias\start-dev.ps1: 110 Carácter: 3
++ } catch {
++   ~~~~~
+    + CategoryInfo          : ObjectNotFound: (catch:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException

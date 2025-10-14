@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('chat', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->timestamp('fecha_chat')->nullable();
+            
         });
     }
 

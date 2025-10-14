@@ -14,9 +14,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Roles y usuarios
             RoleSeeder::class,
             UserSeeder::class,
             ModuleSeeder::class,
+
+            // Datos del sistema de chat IA
+            EstadoSeeder::class,
+            CategoriaSeeder::class,
+            BdConocimientoSeeder::class,
         ]);
 
     }
