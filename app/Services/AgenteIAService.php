@@ -33,58 +33,53 @@ class AgenteIAService
             'forzar_ia' => $forzarIA
         ]);
 
-        // ================================================================
-        // PASO 1: Buscar en base de conocimientos (si no es segundo intento)
-        // ================================================================
+        // PASO 1: Buscar en base de conocimientos
+        $solucionesConocidas = [];
         if (!$forzarIA) {
             $solucionesConocidas = $this->consultarBaseConocimientos($problema);
-
-            if (!empty($solucionesConocidas)) {
-                Log::info('AgenteIA: Solución encontrada en BD conocimientos', [
-                    'cantidad_soluciones' => count($solucionesConocidas),
-                    'solucion_id' => $solucionesConocidas[0]['id'] ?? null
-                ]);
-
-                return [
-                    'respuesta' => $this->formatearRespuestaConocimiento($solucionesConocidas[0]),
-                    'tipo_solucion' => 'bd_conocimientos',
-                    'fuente' => 'base_conocimientos',
-                    'categoria_detectada' => $this->detectarCategoria($problema),
-                    'requiere_derivacion' => false,
-                    'solucion_id' => $solucionesConocidas[0]['id'] ?? null,
-                    'metadata' => [
-                        'confianza' => 0.9,
-                        'origen' => 'bd_conocimientos',
-                        'fecha_solucion' => $solucionesConocidas[0]['fecha'] ?? null
-                    ]
-                ];
-            }
         }
 
-        // ================================================================
-        // PASO 2: No hay solución en BD o es segundo intento → Consultar IA
-        // ================================================================
+        // PASO 2: Determinar estrategia
         $categoria = $this->detectarCategoria($problema);
+
+        if (!empty($solucionesConocidas) && !$forzarIA) {
+            // Hay soluciones relevantes → Enviar a DeepSeek con contexto de conversaciones previas
+            Log::info('AgenteIA: Soluciones encontradas en BD, enviando a IA', [
+                'cantidad_soluciones' => count($solucionesConocidas)
+            ]);
+
+            $contextoEnriquecido = $this->enriquecerContexto($problema, $contexto, $categoria);
+            $contextoEnriquecido['conversaciones_previas'] = $solucionesConocidas;
+
+            $respuestaIA = $this->deepSeekService->resolverProblema($problema, $contextoEnriquecido);
+
+            return [
+                'respuesta' => $respuestaIA['respuesta'],
+                'tipo_solucion' => 'ia_con_conocimientos',
+                'fuente' => 'deepseek_con_bd',
+                'categoria_detectada' => $categoria,
+                'requiere_derivacion' => false,
+                'metadata' => [
+                    'confianza' => $respuestaIA['confianza'] ?? 0.9,
+                    'origen' => 'deepseek_bd',
+                    'categoria' => $categoria,
+                    'soluciones_usadas' => count($solucionesConocidas)
+                ]
+            ];
+        }
+
+        // PASO 3: No hay soluciones o segundo intento → IA pura
         $contextoEnriquecido = $this->enriquecerContexto($problema, $contexto, $categoria);
         $respuestaIA = $this->deepSeekService->resolverProblema($problema, $contextoEnriquecido);
-
-        // PASO 3: Evaluar respuesta de IA
-        $confianza = $this->calcularConfianza($respuestaIA);
-
-        Log::info('AgenteIA: Respuesta generada por DeepSeek', [
-            'confianza' => $confianza,
-            'categoria' => $categoria,
-            'longitud_respuesta' => strlen($respuestaIA['respuesta'])
-        ]);
 
         return [
             'respuesta' => $respuestaIA['respuesta'],
             'tipo_solucion' => 'ia',
             'fuente' => 'deepseek',
             'categoria_detectada' => $categoria,
-            'requiere_derivacion' => false, // Ya NO deriva automáticamente
+            'requiere_derivacion' => false,
             'metadata' => [
-                'confianza' => $confianza,
+                'confianza' => $this->calcularConfianza($respuestaIA),
                 'origen' => 'deepseek',
                 'categoria' => $categoria
             ]
@@ -97,35 +92,21 @@ class AgenteIAService
     protected function consultarBaseConocimientos(string $problema): array
     {
         try {
+            // Búsqueda por palabras clave (top 3)
             $soluciones = BdConocimiento::buscarSolucionesSimilares($problema, 3);
-            
+
             Log::info('AgenteIA: Búsqueda en BD conocimientos', [
-                'resultados' => count($soluciones)
+                'total_resultados' => count($soluciones)
             ]);
 
             return $soluciones;
+
         } catch (\Exception $e) {
-            Log::error('AgenteIA: Error consultando BD conocimientos', [
+            Log::error('AgenteIA: Error en búsqueda BD', [
                 'error' => $e->getMessage()
             ]);
             return [];
         }
-    }
-
-    /**
-     * Formatear respuesta desde base de conocimientos
-     */
-    protected function formatearRespuestaConocimiento(array $solucion): string
-    {
-        $respuesta = "He encontrado una solución similar en nuestra base de conocimientos:\n\n";
-        $respuesta .= "**Problema similar:** {$solucion['problema']}\n\n";
-        $respuesta .= "**Solución:**\n{$solucion['solucion']}\n\n";
-        
-        if (!empty($solucion['resolutor'])) {
-            $respuesta .= "_Esta solución fue proporcionada por: {$solucion['resolutor']}_\n";
-        }
-
-        return $respuesta;
     }
 
     /**

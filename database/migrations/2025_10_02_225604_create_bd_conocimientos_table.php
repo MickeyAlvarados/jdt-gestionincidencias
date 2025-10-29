@@ -16,7 +16,7 @@ return new class extends Migration
             $table->bigInteger('id_incidencia')->nullable();
             $table->text('descripcion_problema')->nullable();
             $table->date('fecha_incidencia')->nullable();
-            $table->text('comentario_resolucion')->nullable();
+            $table->json('comentario_resolucion')->nullable()->comment('Conversación completa con la solución en formato JSON');
             $table->string('empleado_resolutor', 100)->nullable();
         });
     }

@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class BdConocimiento extends Model
 {
     protected $table = 'bd_conocimientos';
-    
+
     public $timestamps = false;
-    
+
     protected $fillable = [
         'id',
         'id_incidencia',
@@ -21,6 +21,7 @@ class BdConocimiento extends Model
 
     protected $casts = [
         'fecha_incidencia' => 'date',
+        'comentario_resolucion' => 'array', // JSON casting para la conversación
     ];
 
     /**
@@ -33,16 +34,16 @@ class BdConocimiento extends Model
 
     /**
      * Buscar soluciones similares en la base de conocimientos
+     * Búsqueda por palabras clave en el problema
      */
     public static function buscarSolucionesSimilares(string $problema, int $limite = 5): array
     {
         // Búsqueda simple por palabras clave
         $palabrasClave = self::extraerPalabrasClave($problema);
-        
+
         $resultados = self::where(function ($query) use ($palabrasClave) {
             foreach ($palabrasClave as $palabra) {
-                $query->orWhere('descripcion_problema', 'ILIKE', "%{$palabra}%")
-                      ->orWhere('comentario_resolucion', 'ILIKE', "%{$palabra}%");
+                $query->orWhere('descripcion_problema', 'ILIKE', "%{$palabra}%");
             }
         })
         ->whereNotNull('comentario_resolucion')
@@ -51,8 +52,9 @@ class BdConocimiento extends Model
 
         return $resultados->map(function ($item) {
             return [
+                'id' => $item->id,
                 'problema' => $item->descripcion_problema,
-                'solucion' => $item->comentario_resolucion,
+                'conversacion' => $item->comentario_resolucion, // Array con la conversación completa
                 'fecha' => $item->fecha_incidencia,
                 'resolutor' => $item->empleado_resolutor,
             ];
@@ -64,17 +66,17 @@ class BdConocimiento extends Model
      */
     private static function extraerPalabrasClave(string $texto): array
     {
-        // Palabras comunes a ignorar
+        // Palabras comunes a ignorar (stop words en español)
         $stopWords = ['el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se', 'no', 'por', 'con', 'para', 'una', 'su', 'al', 'lo', 'como', 'más', 'pero', 'sus', 'le', 'ya', 'o', 'fue', 'este', 'ha', 'sí', 'porque', 'esta', 'son', 'entre', 'está', 'cuando', 'muy', 'sin', 'sobre', 'también', 'me', 'hasta', 'hay', 'donde', 'han', 'quien', 'están', 'estado', 'desde', 'todo', 'nos', 'durante', 'estados', 'todos', 'uno', 'les', 'ni', 'contra', 'otros', 'fueron', 'ese', 'eso', 'había', 'ante', 'ellos', 'e', 'esto', 'mí', 'antes', 'algunos', 'qué', 'unos', 'yo', 'otro', 'otras', 'otra', 'él', 'tanto', 'esa', 'estos', 'mucho', 'quienes', 'nada', 'muchos', 'cual', 'sea', 'poco', 'ella', 'estar', 'haber', 'estas', 'estaba', 'estamos', 'algunas', 'algo', 'nosotros'];
-        
+
         // Convertir a minúsculas y extraer palabras
         $palabras = preg_split('/\s+/', strtolower($texto));
-        
+
         // Filtrar palabras cortas y stop words
         $palabrasClave = array_filter($palabras, function ($palabra) use ($stopWords) {
             return strlen($palabra) > 3 && !in_array($palabra, $stopWords);
         });
-        
+
         return array_values(array_unique($palabrasClave));
     }
 }

@@ -66,6 +66,14 @@ class Incidencia extends Model
     }
 
     /**
+     * Relación con detalles de incidencia
+     */
+    public function detalles()
+    {
+        return $this->hasMany(DetalleIncidencia::class, 'idincidencia');
+    }
+
+    /**
      * Verificar si la incidencia está resuelta
      */
     public function estaResuelta(): bool
@@ -104,12 +112,28 @@ class Incidencia extends Model
      */
     public function guardarEnConocimientos(string $solucion, string $resolutor): BdConocimiento
     {
-        return BdConocimiento::create([
+        $conocimiento = BdConocimiento::create([
             'id_incidencia' => $this->id,
             'descripcion_problema' => $this->descripcion_problema,
             'fecha_incidencia' => $this->fecha_incidencia,
             'comentario_resolucion' => $solucion,
             'empleado_resolutor' => $resolutor,
         ]);
+
+        // NUEVO: Generar embedding automáticamente
+        try {
+            $conocimiento->generarEmbedding();
+            \Log::info('Embedding generado automáticamente para nuevo conocimiento', [
+                'conocimiento_id' => $conocimiento->id,
+                'incidencia_id' => $this->id
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error generando embedding para nuevo conocimiento', [
+                'error' => $e->getMessage(),
+                'conocimiento_id' => $conocimiento->id
+            ]);
+        }
+
+        return $conocimiento;
     }
 }

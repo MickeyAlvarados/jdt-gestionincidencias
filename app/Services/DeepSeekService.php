@@ -90,10 +90,50 @@ class DeepSeekService
     {
         $basePrompt = "Problema reportado: {$problema}\n\n";
 
+        // Agregar conversaciones previas de la base de conocimientos
+        if (!empty($contexto['conversaciones_previas'])) {
+            $basePrompt .= "=== CONVERSACIONES PREVIAS CON PROBLEMAS SIMILARES ===\n\n";
+
+            foreach ($contexto['conversaciones_previas'] as $i => $caso) {
+                $num = $i + 1;
+
+                $basePrompt .= "Caso #{$num}:\n";
+                $basePrompt .= "Problema: {$caso['problema']}\n";
+
+                // La conversación es un array JSON con los mensajes
+                if (!empty($caso['conversacion']) && is_array($caso['conversacion'])) {
+                    $basePrompt .= "Conversación que llevó a la solución:\n";
+                    foreach ($caso['conversacion'] as $mensaje) {
+                        $rol = $mensaje['rol'] ?? 'usuario';
+                        $contenido = $mensaje['contenido'] ?? '';
+                        $basePrompt .= "  - {$rol}: {$contenido}\n";
+                    }
+                }
+
+                if (!empty($caso['resolutor'])) {
+                    $basePrompt .= "Resuelto por: {$caso['resolutor']}\n";
+                }
+
+                if (!empty($caso['fecha'])) {
+                    $basePrompt .= "Fecha: {$caso['fecha']}\n";
+                }
+
+                $basePrompt .= "\n";
+            }
+
+            $basePrompt .= "=== FIN DE CONVERSACIONES PREVIAS ===\n\n";
+            $basePrompt .= "INSTRUCCIÓN: Revisa las conversaciones anteriores de casos similares. ";
+            $basePrompt .= "Aprende de cómo se resolvieron esos problemas y adapta la solución al contexto actual del usuario. ";
+            $basePrompt .= "Genera una respuesta clara, paso a paso y personalizada.\n\n";
+        }
+
+        // Información adicional del contexto
         if (!empty($contexto)) {
             $basePrompt .= "Información adicional:\n";
             foreach ($contexto as $key => $value) {
-                $basePrompt .= "- {$key}: {$value}\n";
+                if ($key !== 'conversaciones_previas') {
+                    $basePrompt .= "- {$key}: " . (is_array($value) ? json_encode($value) : $value) . "\n";
+                }
             }
             $basePrompt .= "\n";
         }

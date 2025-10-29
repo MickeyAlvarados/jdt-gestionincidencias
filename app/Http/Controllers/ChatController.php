@@ -6,8 +6,10 @@ use App\Services\AgenteIAService;
 use App\Models\Chat;
 use App\Models\ChatMensaje;
 use App\Models\Incidencia;
+use App\Models\DetalleIncidencia;
 use App\Models\BdConocimiento;
 use App\Models\User;
+use App\Models\Estado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -343,6 +345,8 @@ class ChatController extends Controller
     private function derivarATecnico($chatId, $comentario = null)
     {
         try {
+            DB::beginTransaction();
+
             $incidencia = Incidencia::where('id_chat', $chatId)->first();
 
             if (!$incidencia) {
@@ -357,23 +361,30 @@ class ChatController extends Controller
                     $descripcion .= "\n\nComentario del usuario: " . $comentario;
                 }
 
+                // Generar ID para la incidencia
+                $incidenciaId = Incidencia::max('id') + 1;
+
                 $incidencia = Incidencia::create([
+                    'id' => $incidenciaId,
                     'descripcion_problema' => $descripcion,
                     'fecha_incidencia' => now(),
                     'id_chat' => $chatId,
                     'idempleado' => Auth::id(),
-                    'estado' => 2, // Derivado
+                    'estado' => Estado::DERIVADO, // Derivado
                     'prioridad' => 2, // Media
                 ]);
             } else {
                 // Actualizar incidencia existente
                 $incidencia->update([
-                    'estado' => 2, // Derivado
+                    'estado' => Estado::DERIVADO, // Derivado
                 ]);
             }
 
             // Asignar técnico
-            $this->asignarTecnicoDisponible($incidencia);
+            $tecnico = $this->asignarTecnicoDisponible($incidencia);
+
+            // Crear detalle de incidencia derivada
+            $this->crearDetalleIncidenciaDerivado($incidencia, $chatId, $comentario, $tecnico);
 
             // Enviar mensaje de derivación en el chat
             // Generar ID único para el mensaje (máximo global, no por chat)
@@ -388,10 +399,64 @@ class ChatController extends Controller
                 'fecha_envio' => now(),
             ]);
 
+            DB::commit();
+
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('ChatController: Error derivando a técnico', [
                 'error' => $e->getMessage(),
                 'chat_id' => $chatId
+            ]);
+        }
+    }
+
+    /**
+     * Crear detalle de incidencia derivada a técnico
+     */
+    private function crearDetalleIncidenciaDerivado($incidencia, $chatId, $comentarioUsuario = null, $tecnico = null)
+    {
+        try {
+            // Obtener usuario IA
+            $usuarioIA = $this->getUsuarioIA();
+
+            // Recopilar intentos de solución de la IA
+            $mensajesIA = ChatMensaje::where('id_chat', $chatId)
+                ->where('emisor', $usuarioIA->id)
+                ->orderBy('fecha_envio', 'asc')
+                ->get()
+                ->pluck('contenido_mensaje')
+                ->implode("\n\n--- --- ---\n\n");
+
+            $comentario = "Incidencia derivada a técnico humano - IA no pudo resolver.\n\n";
+            $comentario .= "Intentos de solución de la IA:\n\n" . $mensajesIA;
+
+            if ($comentarioUsuario) {
+                $comentario .= "\n\n**Comentario del usuario:** " . $comentarioUsuario;
+            }
+
+            // Generar ID para el detalle
+            $detalleId = DetalleIncidencia::where('idincidencia', $incidencia->id)->max('id') ?? 0;
+            $detalleId++;
+
+            DetalleIncidencia::create([
+                'id' => $detalleId,
+                'idincidencia' => $incidencia->id,
+                'fecha_inicio' => now(),
+                'estado_atencion' => Estado::DERIVADO,
+                'idempleado_informatica' => $tecnico ? $tecnico->id : null,
+                'comentarios' => $comentario,
+                'fecha_cierre' => null, // Aún no cerrado
+            ]);
+
+            Log::info('ChatController: Detalle de incidencia creado como derivado', [
+                'incidencia_id' => $incidencia->id,
+                'detalle_id' => $detalleId
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('ChatController: Error creando detalle de incidencia derivada', [
+                'error' => $e->getMessage(),
+                'incidencia_id' => $incidencia->id
             ]);
         }
     }
@@ -415,29 +480,35 @@ class ChatController extends Controller
     private function crearIncidenciaResuelta($chatId)
     {
         try {
+            DB::beginTransaction();
+
             // Verificar si ya existe incidencia
             $incidencia = Incidencia::where('id_chat', $chatId)->first();
 
             if ($incidencia) {
                 // Actualizar existente
-                $incidencia->update(['estado' => 4]); // Resuelto
+                $incidencia->update(['estado' => Estado::RESUELTO]); // Resuelto
 
                 Log::info('ChatController: Incidencia actualizada a resuelta', [
                     'incidencia_id' => $incidencia->id
                 ]);
             } else {
-                // Crear nueva
+                // Crear nueva incidencia
                 $primerMensaje = ChatMensaje::where('id_chat', $chatId)
                     ->where('emisor', Auth::id())
                     ->orderBy('fecha_envio', 'asc')
                     ->first();
 
+                // Generar ID para la incidencia
+                $incidenciaId = Incidencia::max('id') + 1;
+
                 $incidencia = Incidencia::create([
+                    'id' => $incidenciaId,
                     'descripcion_problema' => $primerMensaje->contenido_mensaje ?? 'Problema resuelto por IA',
                     'fecha_incidencia' => now(),
                     'id_chat' => $chatId,
                     'idempleado' => Auth::id(),
-                    'estado' => 4, // Resuelto
+                    'estado' => Estado::RESUELTO, // Resuelto
                     'prioridad' => 1,
                 ]);
 
@@ -446,13 +517,66 @@ class ChatController extends Controller
                 ]);
             }
 
+            // Crear o actualizar detalle de incidencia
+            $this->crearDetalleIncidenciaResuelto($incidencia, $chatId);
+
+            DB::commit();
             return $incidencia;
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('ChatController: Error creando incidencia resuelta', [
                 'error' => $e->getMessage(),
                 'chat_id' => $chatId
             ]);
+        }
+    }
+
+    /**
+     * Crear detalle de incidencia resuelta por IA
+     */
+    private function crearDetalleIncidenciaResuelto($incidencia, $chatId)
+    {
+        try {
+            // Obtener usuario IA
+            $usuarioIA = $this->getUsuarioIA();
+
+            // Recopilar todas las respuestas de la IA para usar como comentario
+            $mensajesIA = ChatMensaje::where('id_chat', $chatId)
+                ->where('emisor', $usuarioIA->id)
+                ->orderBy('fecha_envio', 'asc')
+                ->get()
+                ->pluck('contenido_mensaje')
+                ->implode("\n\n--- --- ---\n\n");
+
+            $comentario = "Incidencia resuelta automáticamente por el Agente IA.\n\n";
+            $comentario .= "Soluciones proporcionadas:\n\n" . $mensajesIA;
+
+            // Generar ID para el detalle (puede ser 1 si es el primer detalle de esta incidencia)
+            $detalleId = DetalleIncidencia::where('idincidencia', $incidencia->id)->max('id') ?? 0;
+            $detalleId++;
+
+            DetalleIncidencia::create([
+                'id' => $detalleId,
+                'idincidencia' => $incidencia->id,
+                'fecha_inicio' => $incidencia->fecha_incidencia,
+                'estado_atencion' => Estado::RESUELTO,
+                'idempleado_informatica' => $usuarioIA->id,
+                'comentarios' => $comentario,
+                'fecha_cierre' => now(),
+            ]);
+
+            Log::info('ChatController: Detalle de incidencia creado como resuelto', [
+                'incidencia_id' => $incidencia->id,
+                'detalle_id' => $detalleId
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('ChatController: Error creando detalle de incidencia', [
+                'error' => $e->getMessage(),
+                'incidencia_id' => $incidencia->id
+            ]);
+            // No lanzamos la excepción para no afectar la creación de la incidencia
         }
     }
 
@@ -476,13 +600,17 @@ class ChatController extends Controller
                     'incidencia_id' => $incidencia->id,
                     'tecnico_id' => $tecnico->id
                 ]);
+
+                return $tecnico;
             } else {
                 Log::warning('ChatController: No se encontró técnico disponible');
+                return null;
             }
         } catch (\Exception $e) {
             Log::error('ChatController: Error asignando técnico', [
                 'error' => $e->getMessage()
             ]);
+            return null;
         }
     }
 }

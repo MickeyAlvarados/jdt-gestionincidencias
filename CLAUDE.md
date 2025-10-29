@@ -294,4 +294,5 @@ tail -f storage/logs/laravel.log
 
 # Rules
 - las vistas que sean responsive
-- llevar orden el plan de ejecucion para que no te satures
+- llevar orden el plan de ejecucion
+- trabajo en sistema opetarivo de windows
