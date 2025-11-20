@@ -22,6 +22,7 @@ class DetalleIncidencia extends Model
         'idempleado_informatica',
         'comentarios',
         'fecha_cierre',
+        'cargo_id',
     ];
 
     protected $casts = [
@@ -32,6 +33,10 @@ class DetalleIncidencia extends Model
     /**
      * Relación con incidencia
      */
+    public function cargo()
+    {
+        return $this->belongsTo(Cargo::class, 'cargo_id');
+    }
     public function incidencia()
     {
         return $this->belongsTo(Incidencia::class, 'idincidencia');

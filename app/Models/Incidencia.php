@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Incidencia extends Model
 {
     protected $table = 'incidencias';
-    
+
     public $timestamps = false;
-    
+
     protected $fillable = [
         'id',
         'descripcion_problema',
@@ -70,7 +70,8 @@ class Incidencia extends Model
      */
     public function detalles()
     {
-        return $this->hasMany(DetalleIncidencia::class, 'idincidencia');
+        return $this->hasMany(DetalleIncidencia::class, 'idincidencia')
+            ->orderBy('id', 'desc');
     }
 
     /**
