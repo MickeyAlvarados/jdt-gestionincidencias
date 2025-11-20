@@ -384,7 +384,7 @@ class IncidenciaController extends Controller
             DB::transaction(function () use ($validated) {
 
                 $incidencia = Incidencia::findOrFail($validated['incidencia_id']);
-                if($incidencia->estado == 4){
+                if ($incidencia->estado == 4) {
                     throw new \Exception('La incidencia ya se encuentra resuelta');
                 }
 
@@ -448,6 +448,22 @@ class IncidenciaController extends Controller
 
         return response()->json([
             'historial' => $historial
+        ]);
+    }
+    public function updatePrioridad(Request $request, $id)
+    {
+        $incidencia = Incidencia::find($id);
+        if ($incidencia->estado == 4) {
+            throw new \Exception('La incidencia ya se encuentra resuelta');
+        }
+        $request->validate([
+            'prioridad' => 'required|in:1,2,3'
+        ]);
+        $incidencia->update([
+            'prioridad' => $request->prioridad
+        ]);
+        return response()->json([
+            'message' => 'Prioridad actualizada correctamente'
         ]);
     }
 }

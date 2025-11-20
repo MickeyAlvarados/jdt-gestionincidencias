@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/edit/{id}', 'edit')->name('edit');
         Route::post('/atender', 'atender')->name('atender');
         Route::get('/historial/{id}', 'historial')->name('historial');
+        Route::put('/update-prioridad/{id}', 'updatePrioridad')->name('update-prioridad');
+
     });
 
     Route::resource('incidencias', IncidenciaController::class)->only('index', 'store', 'show', 'destroy');
