@@ -93,6 +93,10 @@
                 <Icon name="x" class="w-4 h-4 mr-2" />
                 Limpiar
               </Button>
+              <Button @click="exportarExcel" class="bg-green-600 hover:bg-green-700 text-white">
+                <Icon name="download" class="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -118,7 +122,7 @@
                 </thead>
                 <tbody class="divide-y">
                   <tr
-                    v-for="incidencia in incidencias.data"
+                      v-for="(incidencia, index) in incidencias.data"
                     :key="incidencia.id"
                     @click="seleccionarIncidencia(incidencia)"
                     :class="[
@@ -128,7 +132,7 @@
                         : 'hover:bg-gray-50'
                     ]"
                   >
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ incidencia.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ incidencia.correlative }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{{ incidencia.descripcion_problema }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ incidencia.empleado?.usuario?.nombres.concat(' ', incidencia.empleado?.usuario?.apellidos) || 'N/A' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -325,5 +329,15 @@ const getEstadoBadgeClass = (estado) => {
     6: 'bg-gray-100 text-gray-800'
   }
   return map[estado] || 'bg-gray-100 text-gray-800'
+}
+
+const exportarExcel = () => {
+  const params = new URLSearchParams()
+  if (filters.value.search) params.append('search', filters.value.search)
+  if (filters.value.estado) params.append('estado', filters.value.estado)
+  if (filters.value.prioridad) params.append('prioridad', filters.value.prioridad)
+
+  const url = '/incidencias/exportar/excel' + (params.toString() ? '?' + params.toString() : '')
+  window.location.href = url
 }
 </script>

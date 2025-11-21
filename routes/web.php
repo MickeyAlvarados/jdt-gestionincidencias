@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/atender', 'atender')->name('atender');
         Route::get('/historial/{id}', 'historial')->name('historial');
         Route::put('/update-prioridad/{id}', 'updatePrioridad')->name('update-prioridad');
+        Route::get('/exportar/excel', 'exportarExcel')->name('exportar-excel');
 
     });
 

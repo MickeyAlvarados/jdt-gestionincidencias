@@ -20,7 +20,7 @@ class IncidenciaController extends Controller
     {
         try {
             $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario'])
-                ->orderBy('id', 'desc');
+                ->select('incidencias.*')->orderBy('id', 'desc');
 
             if ($request->has('estado') && $request->estado) {
                 $query->where('estado', $request->estado);
@@ -39,6 +39,7 @@ class IncidenciaController extends Controller
                         });
                 });
             }
+            $query->addSelect(DB::raw('row_number() over (order by incidencias.id desc) as correlative'));
 
             $incidencias = $query->paginate(15);
             return Inertia::render('Incidencia/Index', [
@@ -465,5 +466,88 @@ class IncidenciaController extends Controller
         return response()->json([
             'message' => 'Prioridad actualizada correctamente'
         ]);
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        try {
+            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario'])
+                ->select('incidencias.*')->orderBy('id', 'desc');
+
+            if ($request->has('estado') && $request->estado) {
+                $query->where('estado', $request->estado);
+            }
+
+            if ($request->has('prioridad') && $request->prioridad) {
+                $query->where('prioridad', $request->prioridad);
+            }
+
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('descripcion_problema', 'like', "%{$search}%")
+                        ->orWhereHas('empleado', function ($q) use ($search) {
+                            $q->where('nombre', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            $incidencias = $query->get();
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Encabezados
+            $headers = ['ID', 'Descripción', 'Usuario', 'Estado', 'Prioridad', 'Categoría', 'Fecha'];
+            $sheet->fromArray([$headers], null, 'A1');
+
+            // Estilos para encabezados
+            $headerStyle = $sheet->getStyle('A1:G1');
+            $headerStyle->getFont()->setBold(true);
+            $headerStyle->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $headerStyle->getFill()->getStartColor()->setARGB('FF4472C4');
+            $headerStyle->getFont()->getColor()->setARGB('FFFFFFFF');
+
+            // Datos
+            $row = 2;
+            foreach ($incidencias as $incidencia) {
+                $prioridadMap = [3 => 'Alta', 2 => 'Media', 1 => 'Baja'];
+                $prioridadText = $prioridadMap[$incidencia->prioridad] ?? 'N/A';
+                $usuarioNombre = $incidencia->empleado && $incidencia->empleado->usuario
+                    ? $incidencia->empleado->usuario->nombres . ' ' . $incidencia->empleado->usuario->apellidos
+                    : 'N/A';
+
+                $sheet->setCellValue('A' . $row, $incidencia->id);
+                $sheet->setCellValue('B' . $row, $incidencia->descripcion_problema);
+                $sheet->setCellValue('C' . $row, $usuarioNombre);
+                $sheet->setCellValue('D' . $row, $incidencia->estadoRelacion?->descripcion ?? 'N/A');
+                $sheet->setCellValue('E' . $row, $prioridadText);
+                $sheet->setCellValue('F' . $row, $incidencia->categoria?->descripcion ?? 'N/A');
+                $sheet->setCellValue('G' . $row, $incidencia->fecha_incidencia);
+                $row++;
+            }
+
+            // Ajustar ancho de columnas
+            $sheet->getColumnDimension('A')->setWidth(10);
+            $sheet->getColumnDimension('B')->setWidth(35);
+            $sheet->getColumnDimension('C')->setWidth(25);
+            $sheet->getColumnDimension('D')->setWidth(15);
+            $sheet->getColumnDimension('E')->setWidth(12);
+            $sheet->getColumnDimension('F')->setWidth(20);
+            $sheet->getColumnDimension('G')->setWidth(15);
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $filename = 'incidencias_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+
+            $writer->save('php://output');
+            exit;
+        } catch (\Exception $e) {
+            Log::error('Error exportando incidencias a Excel', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Error al exportar las incidencias');
+        }
     }
 }
