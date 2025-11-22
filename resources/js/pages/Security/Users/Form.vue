@@ -19,6 +19,7 @@ interface Usuario {
     id: number
     nombres: string
     apellidos: string
+    codigo?: string
     role_id: string
     email: string
     password?: string
@@ -35,6 +36,7 @@ const initData: Usuario = {
     id: -1,
     nombres: '',
     apellidos: '',
+    codigo: '',
     role_id: '',
     email: '',
     password: '',
@@ -136,7 +138,12 @@ defineExpose({
                                 class="w-full px-3 py-2 border rounded" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1" for="role_id">Rol</label>
+                            <label class="block text-sm font-medium mb-1" for="codigo">Código</label>
+                            <input id="codigo" v-model="form.codigo" type="text"
+                                class="w-full px-3 py-2 border rounded" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="role_id">Area</label>
                             <select id="role_id" v-model="form.role_id" required
                                 class="w-full px-3 py-2 border rounded bg-white">
                                 <option value="">Seleccionar rol</option>

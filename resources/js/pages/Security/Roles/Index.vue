@@ -47,22 +47,22 @@ onMounted(() => {
 });
 const deleteRol = () => {
     if (!selectedRol.value) {
-        showToast('No se seleccionó ningún rol', 'error');
+        showToast('No se seleccionó ningún area', 'error');
         return;
     }
     axios.delete(route('roles.destroy', selectedRol.value.id))
         .then(() => {
             reloadData()
-            showToast('Rol eliminado exitosamente', 'success');
+            showToast('Area eliminado exitosamente', 'success');
         })
         .catch((error) => {
-            console.error('Error al eliminar el rol:', error);
-            showToast('Error al eliminar el rol', 'error');
+            console.error('Error al eliminar el area:', error);
+            showToast('Error al eliminar el area', 'error');
         });
 }
 const editRol = () => {
     if (!selectedRol.value) {
-        showToast('No se seleccionó ningún rol', 'error');
+        showToast('No se seleccionó ningún area', 'error');
         return;
     }
     formRef.value.openDialog(selectedRol.value);
@@ -81,7 +81,7 @@ const newUser = () => {
         <ToastProvider>
             <div class="p-4">
                 <div class="flex justify-between items-center mb-4">
-                    <h1 class="text-2xl font-semibold">Roles</h1>
+                    <h1 class="text-2xl font-semibold">Areas</h1>
                     <div class="flex gap-2">
                         <button @click="newUser"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600">
@@ -112,7 +112,7 @@ const newUser = () => {
                 <div class="bg-white shadow rounded-lg">
                     <div class="overflow-x-auto">
                         <DataTable ref="dataTableRef" fetchUrl="roles/list" :columns="[
-                            { key: 'name', label: 'Rol' },
+                            { key: 'name', label: 'Area' },
                         ]" @rowSelected="onRowSelected" />
                     </div>
                 </div>

@@ -63,11 +63,11 @@ const handleSubmit = () => {
     axios.post(route('roles.store'), form.value)
         .then(() => {
             open.value = false
-            showToast('Usuario guardado correctamente', 'success')
+            showToast('Area guardado correctamente', 'success')
             emit('reloadData')
         })
         .catch((error) => {
-            console.error('Error al guardar usuario:', error)
+            console.error('Error al guardar area:', error)
             if (error.response?.data?.errors) {
                 const errores = error.response.data.errors
                 const primerCampo = Object.keys(errores)[0]
@@ -76,7 +76,7 @@ const handleSubmit = () => {
             } else if (error.response?.data?.message) {
                 showToast(error.response.data.message, 'error')
             } else {
-                showToast('Hubo un problema al guardar el usuario', 'error')
+                showToast('Hubo un problema al guardar el area', 'error')
             }
         })
 }
@@ -93,7 +93,7 @@ defineExpose({
                 <DialogContent class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
                        bg-white p-6 rounded-md w-full max-w-md">
                     <DialogTitle class="text-xl font-semibold mb-4">
-                        {{ editData ? 'Editar Rol' : 'Crear Rol' }}
+                        {{ editData ? 'Editar area' : 'Crear area' }}
                     </DialogTitle>
 
                     <form @submit.prevent="handleSubmit" class="space-y-4">

@@ -115,6 +115,8 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">ID</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Descripcion</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Usuario</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Area</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Codigo</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Estado</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Prioridad</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Fecha</th>
@@ -135,6 +137,8 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ incidencia.correlative }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{{ incidencia.descripcion_problema }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ incidencia.empleado?.usuario?.nombres.concat(' ', incidencia.empleado?.usuario?.apellidos) || 'N/A' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ incidencia.ultimo_detalle?.rol?.name || 'N/A' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ incidencia.empleado?.usuario?.codigo || 'N/A' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span :class="getEstadoBadgeClass(incidencia.estado)" class="px-3 py-1 rounded-full text-xs font-semibold">
                         {{ incidencia.estado_relacion?.descripcion || 'N/A' }}
@@ -185,7 +189,7 @@
       <!-- Componente Atender -->
       <Atender
         ref="atenderRef"
-        :cargos="cargos"
+        :roles="roles"
 
         @incidenciaAtendida="recargarIncidencias"
       />
@@ -240,7 +244,7 @@ const filters = ref({
 const incidencias = ref(page.props.incidencias || {})
 const estados = ref(page.props.estados || [])
 const prioridades = ref(page.props.prioridades || [])
-const cargos = ref(page.props.cargos || [])
+const roles = ref(page.props.roles || [])
 
 const showToast = (message, type = 'success') => {
   toastMessage.value = message

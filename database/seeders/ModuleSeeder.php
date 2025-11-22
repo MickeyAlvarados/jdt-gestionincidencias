@@ -60,7 +60,7 @@ class ModuleSeeder extends Seeder
 
             //5
             [
-                'descripcion' => 'Roles',
+                'descripcion' => 'Areas',
                 'url' => 'roles.index',
                 'modulo_padre' => 1,
                 'icon' => 'Users',

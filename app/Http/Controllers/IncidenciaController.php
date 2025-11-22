@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cargo;
+use App\Models\Rol;
 use App\Models\Incidencia;
 use App\Models\DetalleIncidencia;
 use App\Models\Estado;
@@ -19,7 +19,7 @@ class IncidenciaController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario'])
+            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario', 'ultimoDetalle', 'ultimoDetalle.rol'])
                 ->select('incidencias.*')->orderBy('id', 'desc');
 
             if ($request->has('estado') && $request->estado) {
@@ -47,7 +47,7 @@ class IncidenciaController extends Controller
                 'estados' => Estado::all(),
                 'categorias' => Categoria::all(),
                 'empleados' => Empleado::all(),
-                'cargos' => Cargo::all(),
+                'roles' => Rol::all(),
                 'prioridades' => [
                     ['id' => 3, 'nombre' => 'Alta'],
                     ['id' => 2, 'nombre' => 'Media'],
@@ -129,7 +129,7 @@ class IncidenciaController extends Controller
                 'estadoRelacion',
                 'detalles',
                 'detalles.estadoAtencion',
-                'detalles.cargo',
+                'detalles.rol',
                 'categoria',
                 'chat',
                 'empleado.usuario'
@@ -376,7 +376,7 @@ class IncidenciaController extends Controller
             'tipo_atencion' => 'required|in:resolver,derivar',
             'incidencia_id' => 'required|exists:incidencias,id',
             'descripcion_resolucion' => 'nullable|string|max:1000',
-            'cargo_id' => 'nullable|exists:cargos,id',
+            'role_id' => 'nullable|exists:roles,id',
             'descripcion_derivar' => 'nullable|string|max:1000',
         ]);
         // dd($validated);
@@ -401,7 +401,7 @@ class IncidenciaController extends Controller
                     'idempleado_informatica' => Auth::id(),
                     'comentarios' =>  $validated['tipo_atencion'] === 'resolver' ? $validated['descripcion_resolucion'] : $validated['descripcion_derivar'],
                     'fecha_cierre' =>  $validated['tipo_atencion'] === 'resolver' ? now() : null,
-                    'cargo_id' =>  $validated['tipo_atencion'] === 'resolver' ? null : $validated['cargo_id'],
+                    'role_id' =>  $validated['tipo_atencion'] === 'resolver' ? null : $validated['role_id'],
                 ]);
             });
 
@@ -421,7 +421,7 @@ class IncidenciaController extends Controller
     {
         $historial = DetalleIncidencia::where('idincidencia', $id)
             ->with([
-                'cargo:id,descripcion',
+                'rol:id,name',
                 'empleadoInformatica.usuario:id,nombres,apellidos'
             ])
             ->orderBy('id', 'desc')
@@ -433,9 +433,9 @@ class IncidenciaController extends Controller
                     'fecha_inicio' => $detalle->fecha_inicio,
                     'estado_atencion' => $detalle->estado_atencion,
                     'estado_text' => $detalle->estadoAtencion?->descripcion,
-                    'cargo' => $detalle->cargo ? [
-                        'id' => $detalle->cargo->id,
-                        'descripcion' => $detalle->cargo->descripcion,
+                    'rol' => $detalle->rol ? [
+                        'id' => $detalle->rol->id,
+                        'name' => $detalle->rol->name,
                     ] : null,
                     'empleado_informatica' => $detalle->empleadoInformatica ? [
                         'id' => $detalle->empleadoInformatica->id,
@@ -471,7 +471,7 @@ class IncidenciaController extends Controller
     public function exportarExcel(Request $request)
     {
         try {
-            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario'])
+            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario','ultimoDetalle','ultimoDetalle.rol'])
                 ->select('incidencias.*')->orderBy('id', 'desc');
 
             if ($request->has('estado') && $request->estado) {
@@ -491,6 +491,7 @@ class IncidenciaController extends Controller
                         });
                 });
             }
+            $query->addSelect(DB::raw('row_number() over (order by incidencias.id desc) as correlative'));
 
             $incidencias = $query->get();
 
@@ -498,11 +499,11 @@ class IncidenciaController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
 
             // Encabezados
-            $headers = ['ID', 'Descripción', 'Usuario', 'Estado', 'Prioridad', 'Categoría', 'Fecha'];
+            $headers = ['ID', 'Descripción', 'Usuario', 'Estado', 'Prioridad','Código','Area', 'Categoría', 'Fecha'];
             $sheet->fromArray([$headers], null, 'A1');
 
             // Estilos para encabezados
-            $headerStyle = $sheet->getStyle('A1:G1');
+            $headerStyle = $sheet->getStyle('A1:I1');
             $headerStyle->getFont()->setBold(true);
             $headerStyle->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
             $headerStyle->getFill()->getStartColor()->setARGB('FF4472C4');
@@ -517,13 +518,15 @@ class IncidenciaController extends Controller
                     ? $incidencia->empleado->usuario->nombres . ' ' . $incidencia->empleado->usuario->apellidos
                     : 'N/A';
 
-                $sheet->setCellValue('A' . $row, $incidencia->id);
+                $sheet->setCellValue('A' . $row, $incidencia->correlative);
                 $sheet->setCellValue('B' . $row, $incidencia->descripcion_problema);
                 $sheet->setCellValue('C' . $row, $usuarioNombre);
                 $sheet->setCellValue('D' . $row, $incidencia->estadoRelacion?->descripcion ?? 'N/A');
                 $sheet->setCellValue('E' . $row, $prioridadText);
-                $sheet->setCellValue('F' . $row, $incidencia->categoria?->descripcion ?? 'N/A');
-                $sheet->setCellValue('G' . $row, $incidencia->fecha_incidencia);
+                $sheet->setCellValue('F' . $row, $incidencia->empleado?->usuario?->codigo ?? 'N/A');
+                $sheet->setCellValue('G' . $row, $incidencia->ultimoDetalle?->rol?->name ?? 'N/A');
+                $sheet->setCellValue('H' . $row, $incidencia->categoria?->descripcion ?? 'N/A');
+                $sheet->setCellValue('I' . $row, $incidencia->fecha_incidencia);
                 $row++;
             }
 

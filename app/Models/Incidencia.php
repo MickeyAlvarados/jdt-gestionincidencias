@@ -73,6 +73,11 @@ class Incidencia extends Model
         return $this->hasMany(DetalleIncidencia::class, 'idincidencia')
             ->orderBy('id', 'desc');
     }
+    public function ultimoDetalle()
+    {
+        return $this->hasOne(DetalleIncidencia::class, 'idincidencia')
+            ->latest('id'); // o ->orderBy('id', 'desc')
+    }
 
     /**
      * Verificar si la incidencia está resuelta

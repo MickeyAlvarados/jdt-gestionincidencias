@@ -143,8 +143,8 @@
                                     </p>
                                 </div>
                                 <div>
-                                    <Label class="text-gray-600 font-semibold">Área</Label>
-                                    <p class="text-gray-900">{{ detalle.cargo?.descripcion || 'Sin asignar' }}</p>
+                                    <Label class="text-gray-600 font-semibold">Area</Label>
+                                    <p class="text-gray-900">{{ detalle.rol?.name || 'Sin asignar' }}</p>
                                 </div>
                                 <div>
                                     <Label class="text-gray-600 font-semibold">Fecha de Cierre</Label>

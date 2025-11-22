@@ -16,7 +16,7 @@ return new class extends Migration
             $table->bigInteger('idincidencia');
             $table->primary(['id', 'idincidencia']);
             $table->date('fecha_inicio')->nullable();
-            $table->bigInteger('cargo_id')->nullable();
+            $table->bigInteger('role_id')->nullable();
             $table->bigInteger('estado_atencion')->nullable();
             $table->bigInteger('idempleado_informatica')->nullable();
             $table->text('comentarios')->nullable();

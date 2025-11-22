@@ -26,10 +26,11 @@ class RoleSeeder extends Seeder
         }
 
         $role1 = Role::firstOrCreate(['name' => 'ADMINISTRADOR']);
-        $role2 = Role::firstOrCreate(['name' => 'AREA1']);
-        $role3 = Role::firstOrCreate(['name' => 'AREA2']);
-        $roleTecnico = Role::firstOrCreate(['name' => 'TECNICO_INFORMATICA']);
-        $roleDocente = Role::firstOrCreate(['name' => 'DOCENTE']);
+        $role2 = Role::firstOrCreate(['name' => 'LOGISTICA']);
+        $role3 = Role::firstOrCreate(['name' => 'CONTABILIDAD']);
+        $role4 = Role::firstOrCreate(['name' => 'FINANZAS']);
+        $role5 = Role::firstOrCreate(['name' => 'MARKETING']);
+        $role6 = Role::firstOrCreate(['name' => 'VENTAS']);
 
         Permission::firstOrCreate(['name' => 'modulos.index'],['description' => 'ACCEDER','module_id' => 4])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'modulos.store'],['description' => 'CREAR','module_id' => 4])->syncRoles([$role1,$role2]);
@@ -58,10 +59,10 @@ class RoleSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'incidencias.edit'],['description' => 'EDITAR','module_id' => 9])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'incidencias.destroy'],['description' => 'ELIMINAR','module_id' => 9])->syncRoles([$role1]);
 
-        Permission::firstOrCreate(['name' => 'cargos.index'],['description' => 'ACCEDER','module_id' => 11])->syncRoles([$role1]);
-        Permission::firstOrCreate(['name' => 'cargos.store'],['description' => 'CREAR','module_id' => 11])->syncRoles([$role1]);
-        Permission::firstOrCreate(['name' => 'cargos.edit'],['description' => 'EDITAR','module_id' => 11])->syncRoles([$role1]);
-        Permission::firstOrCreate(['name' => 'cargos.destroy'],['description' => 'ELIMINAR','module_id' => 11])->syncRoles([$role1]);
+        // Permission::firstOrCreate(['name' => 'cargos.index'],['description' => 'ACCEDER','module_id' => 11])->syncRoles([$role1]);
+        // Permission::firstOrCreate(['name' => 'cargos.store'],['description' => 'CREAR','module_id' => 11])->syncRoles([$role1]);
+        // Permission::firstOrCreate(['name' => 'cargos.edit'],['description' => 'EDITAR','module_id' => 11])->syncRoles([$role1]);
+        // Permission::firstOrCreate(['name' => 'cargos.destroy'],['description' => 'ELIMINAR','module_id' => 11])->syncRoles([$role1]);
         // Crear rol para Agente IA
         $roleIA = Role::firstOrCreate(['name' => 'AGENTE_IA']);
 

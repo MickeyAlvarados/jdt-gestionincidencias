@@ -20,6 +20,7 @@ interface Usuario {
     id: number;
     nombres: string;
     apellidos: string;
+    codigo?: string;
     role_id: string;
     email: string;
     password?: string;
@@ -119,8 +120,9 @@ const newUser = () => {
                         <DataTable ref="dataTableRef" fetchUrl="users/list" :columns="[
                             { key: 'nombres', label: 'Nombres' },
                             { key: 'apellidos', label: 'Apellidos' },
+                            { key: 'codigo', label: 'Código' },
                             { key: 'email', label: 'Correo' },
-                            { key: 'role_name', label: 'Rol' },
+                            { key: 'role_name', label: 'Area' },
 
                         ]" @rowSelected="onRowSelected" />
                     </div>

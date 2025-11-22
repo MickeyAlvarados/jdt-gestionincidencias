@@ -105,9 +105,9 @@
                   </p>
                 </div>
 
-                <!-- Select Cargo (si selecciona "Derivar") -->
+                <!-- Select Rol (si selecciona "Derivar") -->
                 <div v-if="tipoAtencion === 'derivar'" class="mb-6">
-                  <Label for="cargo_id" class="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label for="role_id" class="text-sm font-medium text-gray-700 mb-2 block">
                     Derivar a Area *
                   </Label>
                    <textarea
@@ -124,20 +124,20 @@
                     {{ errors.descripcion_derivar }}
                   </p>
                   <select
-                    id="cargo_id"
-                    v-model="form.cargo_id"
+                    id="role_id"
+                    v-model="form.role_id"
                     :class="[
                       'w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500',
-                      errors.cargo_id ? 'border-red-500' : 'border-gray-300'
+                      errors.role_id ? 'border-red-500' : 'border-gray-300'
                     ]"
                   >
                     <option value="">Seleccione un area</option>
-                    <option v-for="cargo in cargos" :key="cargo.id" :value="cargo.id">
-                      {{ cargo.descripcion }}
+                    <option v-for="rol in roles" :key="rol.id" :value="rol.id">
+                      {{ rol.name }}
                     </option>
                   </select>
-                  <p v-if="errors.cargo_id" class="mt-1 text-sm text-red-600">
-                    {{ errors.cargo_id }}
+                  <p v-if="errors.role_id" class="mt-1 text-sm text-red-600">
+                    {{ errors.role_id }}
                   </p>
                 </div>
 
@@ -215,9 +215,9 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                      <div v-if="item.cargo">
+                      <div v-if="item.rol">
                         <p class="font-medium text-gray-700">Area:</p>
-                        <p class="text-gray-600">{{ item.cargo.descripcion }}</p>
+                        <p class="text-gray-600">{{ item.rol.name }}</p>
                       </div>
 
                       <div v-if="item.empleado_informatica">
@@ -281,7 +281,7 @@ import Button from '@/components/ui/button/Button.vue'
 import Label from '@/components/ui/label/Label.vue'
 
 const props = defineProps({
-  cargos: {
+  roles: {
     type: Array,
     default: () => []
   }
@@ -304,13 +304,13 @@ const toastType = ref('success')
 const form = ref({
   descripcion_resolucion: '',
   descripcion_derivar: '',
-  cargo_id: ''
+  role_id: ''
 })
 
 const errors = ref({
   descripcion_resolucion: '',
   descripcion_derivar: '',
-  cargo_id: ''
+  role_id: ''
 })
 
 const showToast = (message, type = 'success') => {
@@ -327,12 +327,12 @@ watch(tipoAtencion, () => {
   form.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
   errors.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
 })
 
@@ -370,12 +370,12 @@ const abrirModal = (incidenciaSeleccionada) => {
   form.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
   errors.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
   isOpen.value = true
 }
@@ -389,12 +389,12 @@ const cerrarModal = () => {
   form.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
   errors.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
 }
 
@@ -402,7 +402,7 @@ const validarFormulario = () => {
   errors.value = {
     descripcion_resolucion: '',
     descripcion_derivar: '',
-    cargo_id: ''
+    role_id: ''
   }
 
   let esValido = true
@@ -429,9 +429,9 @@ const validarFormulario = () => {
     //   showToast('La descripción debe tener al menos 10 caracteres', 'error')
       esValido = false
     }
-    if (!form.value.cargo_id || form.value.cargo_id === '') {
-      errors.value.cargo_id = 'Debe seleccionar un cargo'
-    //   showToast('Debe seleccionar un cargo para derivar', 'error')
+    if (!form.value.role_id || form.value.role_id === '') {
+      errors.value.role_id = 'Debe seleccionar un rol'
+    //   showToast('Debe seleccionar un rol para derivar', 'error')
       esValido = false
     }
   }
@@ -455,7 +455,7 @@ const guardarAtencion = async () => {
     if (tipoAtencion.value === 'resolver') {
       data.descripcion_resolucion = form.value.descripcion_resolucion.trim()
     } else if (tipoAtencion.value === 'derivar') {
-      data.cargo_id = form.value.cargo_id
+      data.role_id = form.value.role_id
       data.descripcion_derivar = form.value.descripcion_derivar.trim()
     }
 
