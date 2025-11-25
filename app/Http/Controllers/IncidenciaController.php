@@ -19,29 +19,49 @@ class IncidenciaController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario', 'ultimoDetalle', 'ultimoDetalle.rol'])
-                ->select('incidencias.*')->orderBy('id', 'desc');
+            $query = Incidencia::with(['empleado.usuario', 'estadoRelacion', 'detalles', 'categoria', 'ultimoDetalle.rol'])
+                ->orderBy('incidencias.id', 'desc');
 
-            if ($request->has('estado') && $request->estado) {
-                $query->where('estado', $request->estado);
+            if ($request->has('estado') && $request->estado != '') {
+                $query->where('incidencias.estado', $request->estado);
             }
 
-            if ($request->has('prioridad') && $request->prioridad) {
-                $query->where('prioridad', $request->prioridad);
+            if ($request->has('prioridad') && $request->prioridad != '') {
+                $query->where('incidencias.prioridad', $request->prioridad);
             }
 
-            if ($request->has('search') && $request->search) {
+            if ($request->has('search') && $request->search != '') {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('descripcion_problema', 'like', "%{$search}%")
-                        ->orWhereHas('empleado', function ($q) use ($search) {
-                            $q->where('nombre', 'like', "%{$search}%");
+                    $q->where('incidencias.descripcion_problema', 'ILIKE', "%{$search}%")
+                        ->orWhereHas('empleado.usuario', function ($q) use ($search) {
+                            $q->where('nombres', 'ILIKE', "%{$search}%")
+                              ->orWhere('apellidos', 'ILIKE', "%{$search}%");
                         });
                 });
             }
-            $query->addSelect(DB::raw('row_number() over (order by incidencias.id desc) as correlative'));
 
-            $incidencias = $query->paginate(15);
+            // Filtro de fecha desde
+
+            if ($request->has('fecha_desde') && $request->fecha_desde != '') {
+                $query->whereDate('incidencias.fecha_incidencia', '>=', $request->fecha_desde);
+            }
+
+            // Filtro de fecha hasta
+            if ($request->has('fecha_hasta') && $request->fecha_hasta != '') {
+                $query->whereDate('incidencias.fecha_incidencia', '<=', $request->fecha_hasta);
+            }
+
+            $incidencias = $query->paginate(15)->through(function ($incidencia, $key) use ($request) {
+                static $correlative = null;
+                if ($correlative === null) {
+                    $correlative = ($request->input('page', 1) - 1) * 15;
+                }
+                $correlative++;
+                $incidencia->correlative = $correlative;
+                return $incidencia;
+            });
+
             return Inertia::render('Incidencia/Index', [
                 'incidencias' => $incidencias,
                 'estados' => Estado::all(),
@@ -471,7 +491,7 @@ class IncidenciaController extends Controller
     public function exportarExcel(Request $request)
     {
         try {
-            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario','ultimoDetalle','ultimoDetalle.rol'])
+            $query = Incidencia::with(['empleado', 'estadoRelacion', 'detalles', 'categoria', 'empleado.usuario', 'ultimoDetalle', 'ultimoDetalle.rol'])
                 ->select('incidencias.*')->orderBy('id', 'desc');
 
             if ($request->has('estado') && $request->estado) {
@@ -491,6 +511,16 @@ class IncidenciaController extends Controller
                         });
                 });
             }
+
+            // Aplicar filtros de fecha para exportación
+            if ($request->has('fecha_desde') && $request->fecha_desde) {
+                $query->whereDate('fecha_incidencia', '>=', $request->fecha_desde);
+            }
+
+            if ($request->has('fecha_hasta') && $request->fecha_hasta) {
+                $query->whereDate('fecha_incidencia', '<=', $request->fecha_hasta);
+            }
+
             $query->addSelect(DB::raw('row_number() over (order by incidencias.id desc) as correlative'));
 
             $incidencias = $query->get();
@@ -499,7 +529,7 @@ class IncidenciaController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
 
             // Encabezados
-            $headers = ['ID', 'Descripción', 'Usuario', 'Estado', 'Prioridad','Código','Area', 'Categoría', 'Fecha'];
+            $headers = ['ID', 'Descripción', 'Usuario', 'Estado', 'Prioridad', 'Código', 'Area', 'Categoría', 'Fecha'];
             $sheet->fromArray([$headers], null, 'A1');
 
             // Estilos para encabezados
@@ -526,7 +556,7 @@ class IncidenciaController extends Controller
                 $sheet->setCellValue('F' . $row, $incidencia->empleado?->usuario?->codigo ?? 'N/A');
                 $sheet->setCellValue('G' . $row, $incidencia->ultimoDetalle?->rol?->name ?? 'N/A');
                 $sheet->setCellValue('H' . $row, $incidencia->categoria?->descripcion ?? 'N/A');
-                $sheet->setCellValue('I' . $row, $incidencia->fecha_incidencia);
+                $sheet->setCellValue('I' . $row, $incidencia->fecha_incidencia->format('Y-m-d'));
                 $row++;
             }
 
@@ -537,7 +567,7 @@ class IncidenciaController extends Controller
             $sheet->getColumnDimension('D')->setWidth(15);
             $sheet->getColumnDimension('E')->setWidth(12);
             $sheet->getColumnDimension('F')->setWidth(20);
-            $sheet->getColumnDimension('G')->setWidth(15);
+            $sheet->getColumnDimension('G')->setWidth(20);
 
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
             $filename = 'incidencias_' . now()->format('Y-m-d_H-i-s') . '.xlsx';

@@ -9,6 +9,7 @@ use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\IncidenciaController;
 use App\Http\Controllers\CargoController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -78,6 +79,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/update/{id}', 'update')->name('update');
     });
     Route::resource('cargos', CargoController::class)->only('index', 'store', 'show', 'destroy');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

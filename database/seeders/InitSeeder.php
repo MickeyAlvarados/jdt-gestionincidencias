@@ -19,7 +19,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 1,
                 'descripcion_problema' => 'No enciende la computadora',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-10-19',
                 'idcategoria' => 1,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -29,7 +29,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 2,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-08-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -39,7 +39,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 3,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-10-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -49,7 +49,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 4,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-08-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -59,7 +59,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 5,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-06-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -69,7 +69,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 6,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-04-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -79,7 +79,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 7,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-02-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -89,7 +89,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 8,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-10-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,
@@ -99,7 +99,7 @@ class InitSeeder extends Seeder
             [
                 'id' => 9,
                 'descripcion_problema' => 'Problema con el sistema de ventas',
-                'fecha_incidencia' => '2025-01-19',
+                'fecha_incidencia' => '2025-10-19',
                 'idcategoria' => 2,
                 'idempleado' => 1,
                 'estado' => 2,

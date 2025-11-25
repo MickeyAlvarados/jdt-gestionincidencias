@@ -39,7 +39,7 @@
         <!-- Filtros y busqueda -->
         <Card class="mb-6">
           <CardContent class="pt-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
               <!-- Busqueda -->
               <div>
                 <Label for="search">Buscar</Label>
@@ -80,6 +80,28 @@
                     {{ prioridad.nombre }}
                   </option>
                 </select>
+              </div>
+
+              <!-- Filtro Fecha Desde -->
+              <div>
+                <Label for="fecha_desde">Fecha Desde</Label>
+                <Input
+                  id="fecha_desde"
+                  v-model="filters.fecha_desde"
+                  type="date"
+                  class="mt-1"
+                />
+              </div>
+
+              <!-- Filtro Fecha Hasta -->
+              <div>
+                <Label for="fecha_hasta">Fecha Hasta</Label>
+                <Input
+                  id="fecha_hasta"
+                  v-model="filters.fecha_hasta"
+                  type="date"
+                  class="mt-1"
+                />
               </div>
             </div>
 
@@ -160,20 +182,20 @@
                   Mostrando {{ incidencias.from }} a {{ incidencias.to }} de {{ incidencias.total }} incidencias
                 </div>
                 <div class="flex gap-2">
-                  <Link
+                  <button
                     v-if="incidencias.prev_page_url"
-                    :href="incidencias.prev_page_url"
+                    @click="cambiarPagina(incidencias.prev_page_url)"
                     class="px-3 py-1 border rounded hover:bg-gray-50"
                   >
                     Anterior
-                  </Link>
-                  <Link
+                  </button>
+                  <button
                     v-if="incidencias.next_page_url"
-                    :href="incidencias.next_page_url"
+                    @click="cambiarPagina(incidencias.next_page_url)"
                     class="px-3 py-1 border rounded hover:bg-gray-50"
                   >
                     Siguiente
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -190,7 +212,6 @@
       <Atender
         ref="atenderRef"
         :roles="roles"
-
         @incidenciaAtendida="recargarIncidencias"
       />
 
@@ -214,7 +235,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
@@ -235,16 +256,39 @@ const toastMessage = ref('')
 const toastType = ref('success')
 const atenderRef = ref()
 
+// Inicializar filtros con los valores de la URL
 const filters = ref({
   search: '',
   estado: '',
-  prioridad: ''
+  prioridad: '',
+  fecha_desde: '',
+  fecha_hasta: ''
+})
+
+// Cargar filtros desde la URL al montar el componente
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  filters.value = {
+    search: urlParams.get('search') || '',
+    estado: urlParams.get('estado') || '',
+    prioridad: urlParams.get('prioridad') || '',
+    fecha_desde: urlParams.get('fecha_desde') || '',
+    fecha_hasta: urlParams.get('fecha_hasta') || ''
+  }
 })
 
 const incidencias = ref(page.props.incidencias || {})
 const estados = ref(page.props.estados || [])
 const prioridades = ref(page.props.prioridades || [])
 const roles = ref(page.props.roles || [])
+
+// Observar cambios en las props para actualizar los datos
+import { watch } from 'vue'
+watch(() => page.props.incidencias, (newValue) => {
+  if (newValue) {
+    incidencias.value = newValue
+  }
+}, { deep: true })
 
 const showToast = (message, type = 'success') => {
   toastMessage.value = message
@@ -280,29 +324,81 @@ const recargarIncidencias = () => {
   router.visit('/incidencias')
 }
 
-const aplicarFiltros = async () => {
+const aplicarFiltros = () => {
   loading.value = true
-  try {
-    const params = new URLSearchParams()
-    if (filters.value.search) params.append('search', filters.value.search)
-    if (filters.value.estado) params.append('estado', filters.value.estado)
-    if (filters.value.prioridad) params.append('prioridad', filters.value.prioridad)
+  selectedIncidencia.value = null
 
-    router.get('/incidencias', Object.fromEntries(params))
-  } catch (error) {
-    console.error('Error aplicando filtros:', error)
-  } finally {
-    loading.value = false
-  }
+  const params = {}
+  if (filters.value.search) params.search = filters.value.search
+  if (filters.value.estado) params.estado = filters.value.estado
+  if (filters.value.prioridad) params.prioridad = filters.value.prioridad
+  if (filters.value.fecha_desde) params.fecha_desde = filters.value.fecha_desde
+  if (filters.value.fecha_hasta) params.fecha_hasta = filters.value.fecha_hasta
+
+  // Construir la URL con los parámetros
+  const queryString = new URLSearchParams(params).toString()
+  const url = queryString ? `/incidencias?${queryString}` : '/incidencias'
+
+  router.visit(url, {
+    method: 'get',
+    preserveState: false,
+    preserveScroll: false,
+    replace: false,
+    only: ['incidencias'],
+    onFinish: () => {
+      loading.value = false
+    },
+    onError: (errors) => {
+      console.error('Error al aplicar filtros:', errors)
+      loading.value = false
+    }
+  })
 }
 
 const limpiarFiltros = () => {
   filters.value = {
     search: '',
     estado: '',
-    prioridad: ''
+    prioridad: '',
+    fecha_desde: '',
+    fecha_hasta: ''
   }
-  router.get('/incidencias')
+  selectedIncidencia.value = null
+
+  router.visit(route('incidencias.index'), {
+    method: 'get',
+    preserveState: false,
+    preserveScroll: false,
+    replace: false,
+    onFinish: () => {
+      loading.value = false
+    }
+  })
+}
+
+const cambiarPagina = (url) => {
+  const urlObj = new URL(url, window.location.origin)
+  const params = {}
+
+  // Obtener el número de página de la URL
+  const page = urlObj.searchParams.get('page')
+  if (page) params.page = page
+
+  // Agregar los filtros actuales a la paginación
+  if (filters.value.search) params.search = filters.value.search
+  if (filters.value.estado) params.estado = filters.value.estado
+  if (filters.value.prioridad) params.prioridad = filters.value.prioridad
+  if (filters.value.fecha_desde) params.fecha_desde = filters.value.fecha_desde
+  if (filters.value.fecha_hasta) params.fecha_hasta = filters.value.fecha_hasta
+
+  selectedIncidencia.value = null
+
+  router.visit(route('incidencias.index', params), {
+    method: 'get',
+    preserveState: false,
+    preserveScroll: false,
+    replace: false
+  })
 }
 
 const formatDate = (date) => {
@@ -340,6 +436,8 @@ const exportarExcel = () => {
   if (filters.value.search) params.append('search', filters.value.search)
   if (filters.value.estado) params.append('estado', filters.value.estado)
   if (filters.value.prioridad) params.append('prioridad', filters.value.prioridad)
+  if (filters.value.fecha_desde) params.append('fecha_desde', filters.value.fecha_desde)
+  if (filters.value.fecha_hasta) params.append('fecha_hasta', filters.value.fecha_hasta)
 
   const url = '/incidencias/exportar/excel' + (params.toString() ? '?' + params.toString() : '')
   window.location.href = url
