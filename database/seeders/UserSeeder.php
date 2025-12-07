@@ -20,18 +20,18 @@ class UserSeeder extends Seeder
         if (DB::table('cargos')->count() == 0) {
             // Insertar cargos
             DB::table('cargos')->insert([
-                ['id' => 1, 'descripcion' => 'Administrador'],
-                ['id' => 2, 'descripcion' => 'Logistica'],
-                ['id' => 3, 'descripcion' => 'Contabilidad'],
-                ['id' => 4, 'descripcion' => 'Finanzas'],
-                ['id' => 5, 'descripcion' => 'Marketing'],
-                ['id' => 6, 'descripcion' => 'Ventas'],
+                ['descripcion' => 'Administrador'],
+                ['descripcion' => 'Logistica'],
+                ['descripcion' => 'Contabilidad'],
+                ['descripcion' => 'Finanzas'],
+                ['descripcion' => 'Marketing'],
+                ['descripcion' => 'Ventas'],
             ]);
         }
 
         // Verificar que el cargo existe antes de continuar
         $cargo = DB::table('cargos')->where('id', 1)->first();
-        
+
         if (!$cargo) {
             throw new \Exception('El cargo con ID 1 no existe en la tabla cargos');
         }
@@ -47,9 +47,9 @@ class UserSeeder extends Seeder
                 'role_id' => 1,
                 'created_at' => Carbon::now(),
             ]);
-            
+
             $user->assignRole('ADMINISTRADOR');
-            
+
             Empleado::create([
                 'id' => $user->id,
                 'idusuarios' => $user->id,

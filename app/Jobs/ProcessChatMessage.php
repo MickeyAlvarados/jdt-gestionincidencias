@@ -190,7 +190,7 @@ class ProcessChatMessage implements ShouldQueue
                 'id_chat' => $this->chatId,
                 'idempleado' => $this->userId,
                 'estado' => 2, // Derivado
-                'prioridad' => $this->calcularPrioridad($respuestaIA['categoria_detectada'] ?? 'general'),
+                'prioridad' => 2,
             ]);
 
             // Asignar a técnico disponible

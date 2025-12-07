@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             EstadoSeeder::class,
             CategoriaSeeder::class,
             BdConocimientoSeeder::class,
+            InitSeeder::class,
         ]);
 
     }

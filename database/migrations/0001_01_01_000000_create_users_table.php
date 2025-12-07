@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('nombres', 100);
             $table->string('apellidos', 100);
+            $table->string('codigo', 100)->nullable();
             $table->enum('tipo_usuario', ['admin', 'docente', 'estudiante'])->default('estudiante');
             $table->unsignedBigInteger('role_id')->nullable();
             $table->rememberToken();

@@ -16,11 +16,11 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ];
 
 const formRef = ref();
-interface Rol {
+interface Cargo {
     id: number;
-    name: string;
+    descripcion: string;
 }
-const selectedRol = ref<Rol | null>(null)
+const selectedCargo = ref<Cargo | null>(null)
 const toastOpen = ref(false);
 const toastMessage = ref('');
 const dataTableRef = ref();
@@ -34,7 +34,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 }
 
 const onRowSelected = (row: any) => {
-    selectedRol.value = row
+    selectedCargo.value = row
 
 }
 const reloadData = () => {
@@ -45,27 +45,27 @@ const reloadData = () => {
 defineExpose({ reloadData })
 onMounted(() => {
 });
-const deleteRol = () => {
-    if (!selectedRol.value) {
-        showToast('No se seleccionó ningún area', 'error');
+const deleteCargo = () => {
+    if (!selectedCargo.value) {
+        showToast('No se seleccionó ningún cargo', 'error');
         return;
     }
-    axios.delete(route('roles.destroy', selectedRol.value.id))
+    axios.delete(route('cargos.destroy', selectedCargo.value.id))
         .then(() => {
             reloadData()
-            showToast('Area eliminado exitosamente', 'success');
+            showToast('Cargo eliminado exitosamente', 'success');
         })
         .catch((error) => {
-            console.error('Error al eliminar el area:', error);
-            showToast('Error al eliminar el area', 'error');
+            console.error('Error al eliminar el cargo:', error);
+            showToast('Error al eliminar el cargo', 'error');
         });
 }
-const editRol = () => {
-    if (!selectedRol.value) {
-        showToast('No se seleccionó ningún area', 'error');
+const editCargo = () => {
+    if (!selectedCargo.value) {
+        showToast('No se seleccionó ningún cargo', 'error');
         return;
     }
-    formRef.value.openDialog(selectedRol.value);
+    formRef.value.openDialog(selectedCargo.value);
 }
 
 const newUser = () => {
@@ -81,7 +81,7 @@ const newUser = () => {
         <ToastProvider>
             <div class="p-4">
                 <div class="flex justify-between items-center mb-4">
-                    <h1 class="text-2xl font-semibold">Areas</h1>
+                    <h1 class="text-2xl font-semibold">Cargos</h1>
                     <div class="flex gap-2">
                         <button @click="newUser"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600">
@@ -91,7 +91,7 @@ const newUser = () => {
                             </svg>
                             Nuevo
                         </button>
-                        <button @click="editRol()"
+                        <button @click="editCargo()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -99,7 +99,7 @@ const newUser = () => {
                             </svg>
                             Editar
                         </button>
-                        <button @click="deleteRol()"
+                        <button @click="deleteCargo()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -111,8 +111,8 @@ const newUser = () => {
                 </div>
                 <div class="bg-white shadow rounded-lg">
                     <div class="overflow-x-auto">
-                        <DataTable ref="dataTableRef" fetchUrl="roles/list" :columns="[
-                            { key: 'name', label: 'Area' },
+                        <DataTable ref="dataTableRef" fetchUrl="cargos/list" :columns="[
+                            { key: 'descripcion', label: 'Cargo' },
                         ]" @rowSelected="onRowSelected" />
                     </div>
                 </div>

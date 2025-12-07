@@ -29,6 +29,7 @@ class UserController extends Controller
         $rules = [
             'nombres' => ['required', 'string', 'max:255'],
             'apellidos' => ['required', 'string', 'max:255'],
+            'codigo' => ['nullable', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $request->id],
             'role_id' => ['required', 'exists:roles,id'],
         ];
@@ -82,6 +83,7 @@ class UserController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('users.nombres', 'ILIKE', "%{$search}%")
                   ->orWhere('users.apellidos', 'ILIKE', "%{$search}%")
+                  ->orWhere('users.codigo', 'ILIKE', "%{$search}%")
                   ->orWhere('users.email', 'ILIKE', "%{$search}%")
                   ->orWhere('roles.name', 'ILIKE', "%{$search}%");
             });

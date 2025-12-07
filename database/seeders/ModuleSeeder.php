@@ -56,11 +56,11 @@ class ModuleSeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
-            
-            
+
+
             //5
             [
-                'descripcion' => 'Roles',
+                'descripcion' => 'Areas',
                 'url' => 'roles.index',
                 'modulo_padre' => 1,
                 'icon' => 'Users',
@@ -78,7 +78,56 @@ class ModuleSeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
-            
+            //7
+            [
+                'descripcion' => 'INCIDENCIAS',
+                'url' => '',
+                'modulo_padre' => 0,
+                'icon' => 'Package',
+                'order' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            //8
+            [
+                'descripcion' => 'IA Chat',
+                'url' => 'chat.index',
+                'modulo_padre' => 7,
+                'icon' => 'Package',
+                'order' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            //9
+            [
+                'descripcion' => 'Incidencias',
+                'url' => 'incidencias.index',
+                'modulo_padre' => 7,
+                'icon' => 'Package',
+                'order' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            //10
+            [
+                'descripcion' => 'MANTENIMIENTO',
+                'url' => '',
+                'modulo_padre' => 0,
+                'icon' => 'Package',
+                'order' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            //11
+            [
+                'descripcion' => 'Cargo',
+                'url' => 'cargos.index',
+                'modulo_padre' => 10,
+                'icon' => 'Package',
+                'order' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
 
         ];
 

@@ -21,4 +21,9 @@ class Empleado extends Model
     public $incrementing = false;
 
     protected $keyType = 'int';
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'idusuarios', 'id');
+    }
 }

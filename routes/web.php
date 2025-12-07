@@ -7,6 +7,9 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\IncidenciaController;
+use App\Http\Controllers\CargoController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -46,8 +49,20 @@ Route::middleware('auth')->group(function () {
     });
     Route::resource('permissions', PermisoController::class)->only('index', 'store', 'show', 'destroy');
 
+    Route::prefix('incidencias')->controller(IncidenciaController::class)->name('incidencias.')->group(function () {
+        Route::get('/list', 'list')->name('list');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/edit/{id}', 'edit')->name('edit');
+        Route::post('/atender', 'atender')->name('atender');
+        Route::get('/historial/{id}', 'historial')->name('historial');
+        Route::put('/update-prioridad/{id}', 'updatePrioridad')->name('update-prioridad');
+        Route::get('/exportar/excel', 'exportarExcel')->name('exportar-excel');
+
+    });
+
+    Route::resource('incidencias', IncidenciaController::class)->only('index', 'store', 'show', 'destroy');
     // Rutas para chat de soporte con IA
-    Route::prefix('chat')->name('chat.')->middleware('auth')->group(function () {
+    Route::prefix('chat')->name('chat.')->group(function () {
         Route::get('/', function () {
             return Inertia::render('Chat/Index');
         })->name('index');
@@ -57,7 +72,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/{chatId}/confirmar-resolucion', [ChatController::class, 'confirmarResolucion'])->name('confirmar-resolucion');
     });
 
-});
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+    Route::prefix('cargos')->controller(CargoController::class)->name('cargos.')->group(function () {
+        Route::get('/list', 'list')->name('list');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/edit/{id}', 'edit')->name('edit');
+        Route::post('/update/{id}', 'update')->name('update');
+    });
+    Route::resource('cargos', CargoController::class)->only('index', 'store', 'show', 'destroy');
 
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

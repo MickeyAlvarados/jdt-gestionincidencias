@@ -12,10 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('detalle_incidencia', function (Blueprint $table) {
-            $table->bigInteger('id');
+            $table->bigInteger('id')->autoIncrement();
             $table->bigInteger('idincidencia');
             $table->primary(['id', 'idincidencia']);
             $table->date('fecha_inicio')->nullable();
+            $table->bigInteger('role_id')->nullable();
             $table->bigInteger('estado_atencion')->nullable();
             $table->bigInteger('idempleado_informatica')->nullable();
             $table->text('comentarios')->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->foreign('estado_atencion')->references('id')->on('estados');
             $table->foreign('idempleado_informatica')->references('id')->on('empleados');
             $table->foreign('idincidencia')->references('id')->on('incidencias');
+
         });
     }
 
