@@ -194,6 +194,15 @@ const messagesContainer = ref(null)
 let channel = null
 
 onMounted(() => {
+  // Obtener token CSRF
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+
+  if (!csrfToken) {
+    console.error('Token CSRF no encontrado')
+    alert('Error de configuración. Por favor recarga la página.')
+    return
+  }
+
   // Inicializar Echo con Reverb
   window.Pusher = Pusher
   window.Echo = new Echo({
@@ -207,7 +216,8 @@ onMounted(() => {
     authEndpoint: '/broadcasting/auth',
     auth: {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
       },
     },
   })
@@ -222,22 +232,42 @@ onUnmounted(() => {
   }
 })
 
+// Obtener token CSRF de forma segura
+const getCsrfToken = () => {
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+}
+
 // Funciones
 const crearChatAutomatico = async () => {
   try {
+    const csrfToken = getCsrfToken()
+    if (!csrfToken) {
+      console.error('Token CSRF no encontrado en crearChatAutomatico')
+      alert('Error de sesión. Por favor recarga la página.')
+      return
+    }
+
     const response = await fetch('/chat/crear-sesion', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
       },
       credentials: 'same-origin'
     })
 
     if (response.status === 419) {
+      console.error('Error 419: Token CSRF inválido o sesión expirada')
       alert('Tu sesión ha expirado. Por favor recarga la página.')
       window.location.reload()
       return
+    }
+
+    if (!response.ok) {
+      console.error('Error en respuesta:', response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
     const data = await response.json()
@@ -270,7 +300,9 @@ const enviarMensaje = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest'
       },
       credentials: 'same-origin',
       body: JSON.stringify({
@@ -304,6 +336,10 @@ const cargarMensajes = async () => {
 
   try {
     const response = await fetch(`/chat/${chatId.value}/mensajes`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       credentials: 'same-origin'
     })
 
@@ -335,7 +371,9 @@ const confirmarResolucion = async (resuelto) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest'
       },
       credentials: 'same-origin',
       body: JSON.stringify({
@@ -376,25 +414,37 @@ const confirmarResolucion = async (resuelto) => {
 const escucharMensajes = () => {
   if (!chatId.value) return
 
-  channel = window.Echo.private(`chat.${chatId.value}`)
-    .listen('.message.sent', (e) => {
-      // Agregar mensaje recibido
-      mensajes.value.push({
-        id: e.id,
-        contenido: e.contenido,
-        fecha_envio: e.fecha_envio,
-        emisor: e.emisor
+  try {
+    channel = window.Echo.private(`chat.${chatId.value}`)
+      .listen('.message.sent', (e) => {
+        // Agregar mensaje recibido
+        mensajes.value.push({
+          id: e.id,
+          contenido: e.contenido,
+          fecha_envio: e.fecha_envio,
+          emisor: e.emisor
+        })
+
+        // Si es mensaje de IA, mostrar opciones de confirmación
+        if (e.emisor.es_ia) {
+          escribiendo.value = false
+          esperandoConfirmacion.value = true
+          tipoSolucionActual.value = e.metadata?.tipo_solucion || 'ia'
+        }
+
+        nextTick(() => scrollToBottom())
       })
-
-      // Si es mensaje de IA, mostrar opciones de confirmación
-      if (e.emisor.es_ia) {
-        escribiendo.value = false
-        esperandoConfirmacion.value = true
-        tipoSolucionActual.value = e.metadata?.tipo_solucion || 'ia'
-      }
-
-      nextTick(() => scrollToBottom())
-    })
+      .error((error) => {
+        console.error('Error en canal de WebSocket:', error)
+        // Si es error de autenticación, puede ser sesión expirada
+        if (error?.status === 419 || error?.status === 401) {
+          alert('Tu sesión ha expirado. Por favor recarga la página.')
+          window.location.reload()
+        }
+      })
+  } catch (error) {
+    console.error('Error al suscribirse al canal:', error)
+  }
 }
 
 const iniciarNuevoChat = () => {

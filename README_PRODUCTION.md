@@ -75,7 +75,7 @@ APP_NAME="JDT Gestión Incidencias"
 APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
-APP_URL=https://incidencias.tudominio.com
+APP_URL=http://gestionincidentes.jungledevperu.com
 
 # Base de datos
 DB_CONNECTION=pgsql
@@ -106,16 +106,16 @@ REVERB_SERVER_PORT=8080
 # CLIENTE: Host/Dominio que el NAVEGADOR usa para conectarse (pública)
 # CRÍTICO: NUNCA usar 0.0.0.0, localhost o 127.0.0.1 aquí
 # Debe ser tu dominio real o IP pública del servidor
-REVERB_HOST="incidencias.tudominio.com"
-REVERB_PORT=443
-REVERB_SCHEME=https
+REVERB_HOST="gestionincidentes.jungledevperu.com"
+REVERB_PORT=80
+REVERB_SCHEME=http
 
 # Variables para el frontend (Vite) - SE COMPILAN EN EL JAVASCRIPT
 # IMPORTANTE: Después de cambiar estas variables, ejecutar: npm run build
 VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="incidencias.tudominio.com"
-VITE_REVERB_PORT=443
-VITE_REVERB_SCHEME=https
+VITE_REVERB_HOST="gestionincidentes.jungledevperu.com"
+VITE_REVERB_PORT=80
+VITE_REVERB_SCHEME=http
 
 # DeepSeek AI
 DEEPSEEK_API_KEY=sk-tu_api_key_aqui
@@ -156,7 +156,7 @@ sudo chmod -R 775 /var/www/jdt-gestionincidencias/bootstrap/cache
 
 ---
 
-## 3. Configurar Nginx
+## 3. Configurar Nginx (Sin SSL)
 
 ```bash
 sudo nano /etc/nginx/sites-available/jdt-gestionincidencias
@@ -167,20 +167,10 @@ sudo nano /etc/nginx/sites-available/jdt-gestionincidencias
 ```nginx
 server {
     listen 80;
-    server_name incidencias.tudominio.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name incidencias.tudominio.com;
+    server_name gestionincidentes.jungledevperu.com;
 
     root /var/www/jdt-gestionincidencias/public;
     index index.php;
-
-    # SSL (configurar con Certbot)
-    ssl_certificate /etc/letsencrypt/live/incidencias.tudominio.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/incidencias.tudominio.com/privkey.pem;
 
     client_max_body_size 50M;
 
@@ -200,11 +190,18 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_pass http://127.0.0.1:8080;
 
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
+    }
+
+    location ~ /\.ht {
+        deny all;
     }
 }
 ```
@@ -219,35 +216,23 @@ sudo systemctl reload nginx
 
 ---
 
-## 4. Configurar SSL
+## 4. Iniciar Servicios (Manual)
 
-```bash
-# Instalar Certbot si no lo tienes
-sudo apt install -y certbot python3-certbot-nginx
-
-# Obtener certificado
-sudo certbot --nginx -d incidencias.tudominio.com
-```
-
----
-
-## 5. Iniciar Servicios (Manual)
-
-### 5.1 Iniciar Laravel Reverb
+### 4.1 Iniciar Laravel Reverb
 
 ```bash
 cd /var/www/jdt-gestionincidencias
 nohup php artisan reverb:start --host=0.0.0.0 --port=8080 > storage/logs/reverb.log 2>&1 &
 ```
 
-### 5.2 Iniciar Queue Worker
+### 4.2 Iniciar Queue Worker
 
 ```bash
 cd /var/www/jdt-gestionincidencias
 nohup php artisan queue:work --sleep=3 --tries=3 > storage/logs/queue-worker.log 2>&1 &
 ```
 
-### 5.3 Verificar que están corriendo
+### 4.3 Verificar que están corriendo
 
 ```bash
 ps aux | grep "artisan reverb"
@@ -257,7 +242,7 @@ ps aux | grep "artisan queue:work"
 
 ---
 
-## 6. Verificación Rápida
+## 5. Verificación Rápida
 
 ```bash
 # Verificar configuración de Reverb
@@ -271,12 +256,12 @@ sudo systemctl status nginx
 sudo systemctl status postgresql
 
 # Probar la aplicación
-curl -I https://incidencias.tudominio.com
+curl -I http://gestionincidentes.jungledevperu.com
 ```
 
 ---
 
-## 7. Actualizar Código
+## 6. Actualizar Código
 
 ```bash
 cd /var/www/jdt-gestionincidencias
@@ -310,7 +295,7 @@ nohup php artisan queue:work --sleep=3 --tries=3 > storage/logs/queue-worker.log
 
 ---
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
 ### ERROR: WebSocket connection to 'ws://0.0.0.0:8080' failed
 
@@ -330,7 +315,7 @@ cd /var/www/jdt-gestionincidencias
 nano .env
 ```
 
-**Configuración correcta para tu servidor `gestionincidentes.jungledevperu.com`:**
+**Configuración correcta para `gestionincidentes.jungledevperu.com` (sin SSL):**
 
 ```env
 # SERVIDOR: Dirección donde Reverb escucha (interno)
@@ -339,14 +324,14 @@ REVERB_SERVER_PORT=8080
 
 # CLIENTE: Dominio que el navegador usa (público)
 REVERB_HOST="gestionincidentes.jungledevperu.com"
-REVERB_PORT=443
-REVERB_SCHEME=https
+REVERB_PORT=80
+REVERB_SCHEME=http
 
 # Frontend (CRÍTICO: usar tu dominio real)
 VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
 VITE_REVERB_HOST="gestionincidentes.jungledevperu.com"
-VITE_REVERB_PORT=443
-VITE_REVERB_SCHEME=https
+VITE_REVERB_PORT=80
+VITE_REVERB_SCHEME=http
 ```
 
 ```bash
