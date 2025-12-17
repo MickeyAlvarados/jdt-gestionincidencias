@@ -10,6 +10,18 @@ Si ves el error `WebSocket connection to 'ws://0.0.0.0:8080' failed` en la conso
 
 **Regla de oro:** Las variables `VITE_REVERB_*` NUNCA deben contener `localhost`, `127.0.0.1` o `0.0.0.0`. Siempre deben tener tu dominio público real (ejemplo: `gestionincidentes.jungledevperu.com`).
 
+## 📡 Desarrollo con Cloudflare Tunnel
+
+Si estás exponiendo tu desarrollo local a través de Cloudflare Tunnel y encuentras el error **"Mixed Content"** (peticiones HTTP bloqueadas en páginas HTTPS), consulta la documentación completa en:
+
+**[docs/CLOUDFLARE_TUNNEL_SETUP.md](docs/CLOUDFLARE_TUNNEL_SETUP.md)**
+
+Este documento incluye:
+- Solución al error de Mixed Content
+- Configuración de variables de entorno para Cloudflare Tunnel
+- Instrucciones paso a paso para exponer tu aplicación
+- Solución de problemas con WebSockets a través del túnel
+
 ---
 
 ## 1. Configurar Base de Datos PostgreSQL
@@ -84,6 +96,15 @@ DB_PORT=5432
 DB_DATABASE=jdt_gestionincidencias
 DB_USERNAME=jdt_user
 DB_PASSWORD=tu_password_seguro
+
+# ==============================================
+# SESIONES - CRÍTICO PARA EVITAR ERROR 419
+# ==============================================
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_DOMAIN=gestionincidentes.jungledevperu.com
+SESSION_SECURE_COOKIE=false
+SESSION_SAME_SITE=lax
 
 # Colas y Broadcasting
 QUEUE_CONNECTION=database
@@ -182,6 +203,11 @@ server {
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
+
+        # Headers importantes para sesiones y CSRF
+        fastcgi_param HTTP_X_FORWARDED_FOR $proxy_add_x_forwarded_for;
+        fastcgi_param HTTP_X_REAL_IP $remote_addr;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $scheme;
     }
 
     # WebSocket Proxy para Reverb
@@ -296,6 +322,66 @@ nohup php artisan queue:work --sleep=3 --tries=3 > storage/logs/queue-worker.log
 ---
 
 ## 7. Troubleshooting
+
+### ERROR 419: Sesión expirada o Token CSRF inválido
+
+**Síntoma:** Al abrir el Chat de IA o hacer cualquier acción POST, aparece error 419 y mensaje "Tu sesión ha expirado".
+
+**Causas comunes:**
+
+1. **SESSION_DOMAIN no configurado**
+2. **Cookies no se envían correctamente**
+3. **Caché de configuración desactualizado**
+
+**Solución:**
+
+```bash
+cd /var/www/jdt-gestionincidencias
+
+# Paso 1: Verificar/actualizar .env
+nano .env
+```
+
+Asegúrate de tener estas variables:
+```env
+SESSION_DRIVER=database
+SESSION_DOMAIN=gestionincidentes.jungledevperu.com
+SESSION_SECURE_COOKIE=false
+SESSION_SAME_SITE=lax
+```
+
+```bash
+# Paso 2: Limpiar TODOS los cachés (muy importante)
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
+# Paso 3: Regenerar caché de configuración
+php artisan config:cache
+
+# Paso 4: Limpiar sesiones antiguas de la base de datos
+php artisan session:table  # Si no existe la tabla
+php artisan migrate
+
+# Paso 5: Verificar permisos de storage
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# Paso 6: Reiniciar PHP-FPM para limpiar opcache
+sudo systemctl restart php8.3-fpm
+
+# Paso 7: Probar en el navegador
+# - Abre una ventana de incógnito
+# - Limpia cookies del sitio
+# - Intenta iniciar sesión nuevamente
+```
+
+**Si sigue fallando**, verifica la consola del navegador (F12 > Network):
+- Si falla `/chat/crear-sesion` con 419 → problema de sesión/CSRF
+- Si falla `/broadcasting/auth` con 419 → problema de autenticación WebSocket
+
+---
 
 ### ERROR: WebSocket connection to 'ws://0.0.0.0:8080' failed
 
