@@ -193,7 +193,7 @@ const messagesContainer = ref(null)
 // Echo para WebSockets
 let channel = null
 
-onMounted(() => {
+onMounted(async () => {
   // Obtener token CSRF
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 
@@ -222,6 +222,9 @@ onMounted(() => {
     },
   })
 
+  // Delay de 300ms para asegurar que la sesión esté inicializada (fix para Mac)
+  await new Promise(resolve => setTimeout(resolve, 300))
+
   // Crear chat automáticamente al cargar
   crearChatAutomatico()
 })
@@ -238,7 +241,7 @@ const getCsrfToken = () => {
 }
 
 // Funciones
-const crearChatAutomatico = async () => {
+const crearChatAutomatico = async (retries = 3) => {
   try {
     const csrfToken = getCsrfToken()
     if (!csrfToken) {
@@ -259,6 +262,15 @@ const crearChatAutomatico = async () => {
     })
 
     if (response.status === 419) {
+      // Si hay reintentos disponibles, esperar y reintentar
+      if (retries > 0) {
+        console.warn(`CSRF error 419, reintentando... (${retries} intentos restantes)`)
+        // Esperar 1 segundo antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        return crearChatAutomatico(retries - 1)
+      }
+
+      // Si ya no hay reintentos, mostrar error y recargar
       console.error('Error 419: Token CSRF inválido o sesión expirada')
       alert('Tu sesión ha expirado. Por favor recarga la página.')
       window.location.reload()

@@ -82,7 +82,13 @@ class ProcessChatMessage implements ShouldQueue
                 'fecha_envio' => now(),
             ]);
 
-            // Broadcast del mensaje
+            // Broadcast del mensaje (sin toOthers para que el usuario reciba la respuesta)
+            Log::info('ProcessChatMessage: Intentando broadcast', [
+                'chat_id' => $this->chatId,
+                'mensaje_id' => $mensajeIA->id,
+                'canal' => 'chat.' . $this->chatId
+            ]);
+
             broadcast(new MessageSent([
                 'id' => $mensajeIA->id,
                 'chat_id' => $this->chatId,
@@ -98,7 +104,9 @@ class ProcessChatMessage implements ShouldQueue
                     'fuente' => $respuestaIA['fuente'],
                     'confianza' => $respuestaIA['metadata']['confianza'] ?? 0
                 ]
-            ]))->toOthers();
+            ]));
+
+            Log::info('ProcessChatMessage: Broadcast ejecutado exitosamente');
 
             Log::info('ProcessChatMessage: Procesamiento completado exitosamente', [
                 'chat_id' => $this->chatId,

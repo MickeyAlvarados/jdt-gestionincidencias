@@ -73,7 +73,11 @@ npm run build
 
 ## Levantar el Proyecto
 
-### Opción 1: Script Automático (Recomendado)
+### Modo Desarrollo
+
+#### Opción 1: Script Automático (Recomendado)
+
+Este script inicia automáticamente todos los servicios necesarios:
 
 **Windows PowerShell:**
 ```powershell
@@ -82,22 +86,51 @@ npm run build
 
 **Linux/Mac:**
 ```bash
-chmod +x start-dev.sh
 ./start-dev.sh
 ```
 
-### Opción 2: Manual (3 terminales)
+El script inicia automáticamente:
+- ✅ Queue Worker (procesa mensajes de IA)
+- ✅ Reverb Server (WebSockets en puerto 8080)
+- ✅ Laravel Server (http://localhost:8000)
+- ✅ Vite Dev Server (hot reload del frontend)
+
+**Presiona Ctrl+C para detener todos los servicios de una vez.**
+
+#### Opción 2: Manual (4 terminales)
+
+Si prefieres control individual de cada servicio:
 
 ```bash
-# Terminal 1 - Servidor Laravel (API)
+# Terminal 1 - Servidor Laravel
 php artisan serve
 
-# Terminal 2 - WebSocket Server (tiempo real)
+# Terminal 2 - WebSocket Server (CRÍTICO para el chat)
 php artisan reverb:start
 
-# Terminal 3 - Queue Worker (procesa mensajes de IA)
+# Terminal 3 - Queue Worker (CRÍTICO para procesamiento de IA)
 php artisan queue:work --tries=3
+
+# Terminal 4 - Vite Dev Server (hot reload)
+npm run dev
 ```
+
+### Modo Producción
+
+Para despliegue en producción:
+
+```bash
+./start-prod.sh
+```
+
+Este script:
+- 🔒 Verifica que APP_ENV=production
+- ⚡ Optimiza cachés (config, routes, views)
+- 📦 Compila assets del frontend
+- 🚀 Inicia Queue Worker en modo daemon
+- 🌐 Inicia Reverb Server
+
+**Nota:** Para producción real se recomienda usar **Supervisor** para gestionar los procesos de manera persistente. Ver [documentación de Laravel](https://laravel.com/docs/11.x/queues#supervisor-configuration).
 
 **Acceso:** http://localhost:8000
 
