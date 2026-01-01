@@ -83,7 +83,7 @@ const newModulo = () => {
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-semibold">Módulos</h1>
                     <div class="flex gap-2">
-                        <button @click="newModulo"
+                        <button  v-if="can('modulos.store')" @click="newModulo"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -91,7 +91,7 @@ const newModulo = () => {
                             </svg>
                             Nuevo
                         </button>
-                        <button @click="editModulo()"
+                        <button v-if="can('modulos.edit')" @click="editModulo()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -99,7 +99,7 @@ const newModulo = () => {
                             </svg>
                             Editar
                         </button>
-                        <button @click="deleteModulo()"
+                        <button v-if="can('modulos.destroy')" @click="deleteModulo()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

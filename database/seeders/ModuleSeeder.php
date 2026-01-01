@@ -129,6 +129,9 @@ class ModuleSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
 
+            //12
+
+
         ];
 
         DB::table('modulos')->insert($data);

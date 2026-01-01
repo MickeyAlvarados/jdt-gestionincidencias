@@ -89,7 +89,7 @@ const newUser = () => {
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-semibold">Usuarios</h1>
                     <div class="flex gap-2">
-                        <button @click="newUser"
+                        <button v-if="can('users.store')" @click="newUser"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -97,7 +97,7 @@ const newUser = () => {
                             </svg>
                             Nuevo
                         </button>
-                        <button @click="editUser()"
+                        <button v-if="can('users.edit')" @click="editUser()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -105,7 +105,7 @@ const newUser = () => {
                             </svg>
                             Editar
                         </button>
-                        <button @click="deleteUser()"
+                        <button v-if="can('users.destroy')" @click="deleteUser()"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
