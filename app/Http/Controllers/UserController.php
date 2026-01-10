@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CustomerResource;
 use App\Models\User;
+use App\Models\Empleado;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -57,14 +59,34 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             $user = User::find($request->id);
-            if (is_null($user)) {
+            $isNewUser = is_null($user);
+
+            if ($isNewUser) {
                 $user = new User();
             } else {
                 $request->request->remove('password');
                 $request->request->remove('password_confirmation');
             }
+
             $user->fill($request->all());
             $user->save();
+
+            // Si es un usuario nuevo, crear empleado y asignar rol
+            if ($isNewUser) {
+                // Crear registro en empleados (requerido para chat)
+                Empleado::create([
+                    'id' => $user->id,
+                    'idusuarios' => $user->id,
+                    'idcargos' => 1, // Cargo por defecto
+                ]);
+
+                // Asignar rol con Spatie (según el role_id)
+                $role = Role::find($request->role_id);
+                if ($role) {
+                    $user->assignRole($role->name);
+                }
+            }
+
             DB::commit();
             return response()->json(['message' => 'Usuario guardado exitosamente', 'user' => $user]);
         } catch (\Exception $e) {

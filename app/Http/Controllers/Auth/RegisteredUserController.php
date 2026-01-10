@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Empleado;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
@@ -34,11 +36,28 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        // Crear usuario, empleado y asignar rol en una transacción
+        DB::transaction(function () use ($request, &$user) {
+            // Crear usuario
+            $user = User::create([
+                'nombres' => $request->name,
+                'apellidos' => '',
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'tipo_usuario' => 'docente',
+                'role_id' => 5, // DOCENTE
+            ]);
+
+            // Asignar rol DOCENTE
+            $user->assignRole('DOCENTE');
+
+            // Crear empleado asociado (requerido para el chat)
+            Empleado::create([
+                'id' => $user->id,
+                'idusuarios' => $user->id,
+                'idcargos' => 1, // Cargo por defecto: Administrador
+            ]);
+        });
 
         event(new Registered($user));
 

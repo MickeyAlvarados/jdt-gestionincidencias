@@ -52,7 +52,9 @@ class RoleSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'users.edit'],['description' => 'EDITAR','module_id' => 3])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'users.destroy'],['description' => 'ELIMINAR','module_id' => 3])->syncRoles([$role1]);
 
-        Permission::firstOrCreate(['name' => 'chat.index'],['description' => 'ACCEDER','module_id' => 8])->syncRoles([$role1]);
+        // Obtener todos los roles existentes para dar acceso al chat
+        $allRoles = Role::all();
+        Permission::firstOrCreate(['name' => 'chat.index'],['description' => 'ACCEDER','module_id' => 8])->syncRoles($allRoles);
 
         Permission::firstOrCreate(['name' => 'incidencias.index'],['description' => 'ACCEDER','module_id' => 9])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'incidencias.store'],['description' => 'CREAR','module_id' => 9])->syncRoles([$role1]);
