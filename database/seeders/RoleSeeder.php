@@ -60,6 +60,7 @@ class RoleSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'incidencias.store'],['description' => 'CREAR','module_id' => 9])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'incidencias.edit'],['description' => 'EDITAR','module_id' => 9])->syncRoles([$role1]);
         Permission::firstOrCreate(['name' => 'incidencias.destroy'],['description' => 'ELIMINAR','module_id' => 9])->syncRoles([$role1]);
+        Permission::firstOrCreate(['name' => 'incidencias.dashboard'],['description' => 'DASHBOARD','module_id' => 9])->syncRoles([$role1]);
 
         // Permission::firstOrCreate(['name' => 'cargos.index'],['description' => 'ACCEDER','module_id' => 11])->syncRoles([$role1]);
         // Permission::firstOrCreate(['name' => 'cargos.store'],['description' => 'CREAR','module_id' => 11])->syncRoles([$role1]);
